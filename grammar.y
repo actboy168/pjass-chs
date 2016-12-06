@@ -107,7 +107,7 @@ funcdefns: /* empty */
 
 globdefs: /* empty */
          | GLOBALS newline vardecls ENDGLOBALS endglobalsmarker
-         | GLOBALS vardecls ENDGLOBALS endglobalsmarker {yyerrorline(syntaxerror, lineno - 1, "Missing linebreak before global declaration");}
+         | GLOBALS vardecls ENDGLOBALS endglobalsmarker {yyerrorline(syntaxerror, lineno - 1, "缺少换行，在global之后");}
 ;
 
 endglobalsmarker: /* empty */  {afterendglobals = 1;}
@@ -145,14 +145,14 @@ expr: intexpr      { $$.ty = gInteger; }
       | FUNCTION rid { struct funcdecl *fd = ht_lookup(&functions, $2.str);
                        if (fd == NULL) {
                            char ebuf[1024];
-                           snprintf(ebuf, 1024, "Undefined function %s", $2.str);
+                           snprintf(ebuf, 1024, "函数 %s 未定义", $2.str);
                            getsuggestions($2.str, ebuf, 1024, 1, &functions);
                            yyerrorex(semanticerror, ebuf);
                            $$.ty = gCode;
                        } else {
                            if (fd->p->head != NULL) {
                                char ebuf[1024];
-                               snprintf(ebuf, 1024, "Function %s must not take any arguments when used as code", $2.str);
+                               snprintf(ebuf, 1024, "被转为code的函数 %s 不能有任何参数", $2.str);
                                yyerrorex(semanticerror, ebuf);
                            }
                            if( fd->ret == gBoolean) {
@@ -188,7 +188,7 @@ expr: intexpr      { $$.ty = gInteger; }
           if (!typeeq(tan->ty, gAny)) {
             if (!tan->isarray) {
               char ebuf[1024];
-              snprintf(ebuf, 1024, "%s not an array", $1.str);
+              snprintf(ebuf, 1024, "%s 不是数组", $1.str);
               yyerrorex(semanticerror, ebuf);
             }
             else {
@@ -201,45 +201,45 @@ expr: intexpr      { $$.ty = gInteger; }
           const struct typeandname *tan = getVariable($1.str);
           if (tan->lineno == lineno && tan->fn == fno) {
             char ebuf[1024];
-            snprintf(ebuf, 1024, "Use of variable %s before its declaration", $1.str);
+            snprintf(ebuf, 1024, "在定义变量 %s 之前使用了它", $1.str);
             yyerrorex(semanticerror, ebuf);
           } else if (islinebreak && tan->lineno == lineno - 1 && tan->fn == fno) {
             char ebuf[1024];
-            snprintf(ebuf, 1024, "Use of variable %s before its declaration", $1.str);
+            snprintf(ebuf, 1024, "在定义变量 %s 之前使用了它", $1.str);
             yyerrorline(semanticerror, lineno - 1, ebuf);
           } else if (tan->isarray) {
             char ebuf[1024];
-            snprintf(ebuf, 1024, "Index missing for array variable %s", $1.str);
+            snprintf(ebuf, 1024, "数组变量 %s 缺少索引", $1.str);
             yyerrorex(semanticerror, ebuf);
           }
           if(infunction && ht_lookup(curtab, $1.str) && !ht_lookup(&initialized, $1.str) ){
             char ebuf[1024];
-            snprintf(ebuf, 1024, "Variable %s is uninitialized", $1.str);
+            snprintf(ebuf, 1024, "变量 %s 没有初始化", $1.str);
             //yyerrorex(3, ebuf);
             yyerrorline(semanticerror, lineno - 1, ebuf);
           }
           $$.ty = tan->ty;
        }
-      | expr EQUALS expr {yyerrorex(syntaxerror, "Single = in expression, should probably be =="); checkeqtest($1.ty, $3.ty); $$.ty = gBoolean;}
-      | LPAREN expr {yyerrorex(syntaxerror, "Mssing ')'"); $$.ty = $2.ty;}
+      | expr EQUALS expr {yyerrorex(syntaxerror, "表达式中的 = ，可能是 =="); checkeqtest($1.ty, $3.ty); $$.ty = gBoolean;}
+      | LPAREN expr {yyerrorex(syntaxerror, "缺少 ')'"); $$.ty = $2.ty;}
       
       // incomplete expressions 
-      | expr LEQ { checkcomparisonsimple($1.ty); yyerrorex(syntaxerror, "Missing expression for comparison"); $$.ty = gBoolean; }
-      | expr GEQ { checkcomparisonsimple($1.ty); yyerrorex(syntaxerror, "Missing expression for comparison"); $$.ty = gBoolean; }
-      | expr LESS { checkcomparisonsimple($1.ty); yyerrorex(syntaxerror, "Missing expression for comparison"); $$.ty = gBoolean; }
-      | expr GREATER { checkcomparisonsimple($1.ty); yyerrorex(syntaxerror, "Missing expression for comparison"); $$.ty = gBoolean; }
-      | expr EQCOMP { yyerrorex(syntaxerror, "Missing expression for comparison"); $$.ty = gBoolean; }
-      | expr NEQ { yyerrorex(syntaxerror, "Missing expression for comparison"); $$.ty = gBoolean; }
-      | expr AND { canconvert($1.ty, gBoolean, 0); yyerrorex(syntaxerror, "Missing expression for logical and"); $$.ty = gBoolean; }
-      | expr OR { canconvert($1.ty, gBoolean, 0); yyerrorex(syntaxerror, "Missing expression for logical or"); $$.ty = gBoolean; }
-      | NOT { yyerrorex(syntaxerror, "Missing expression for logical negation"); $$.ty = gBoolean; }
+      | expr LEQ { checkcomparisonsimple($1.ty); yyerrorex(syntaxerror, "比较运算符 <= 缺少表达式"); $$.ty = gBoolean; }
+      | expr GEQ { checkcomparisonsimple($1.ty); yyerrorex(syntaxerror, "比较运算符 >= 缺少表达式"); $$.ty = gBoolean; }
+      | expr LESS { checkcomparisonsimple($1.ty); yyerrorex(syntaxerror, "比较运算符 < 缺少表达式"); $$.ty = gBoolean; }
+      | expr GREATER { checkcomparisonsimple($1.ty); yyerrorex(syntaxerror, "比较运算符 > 缺少表达式"); $$.ty = gBoolean; }
+      | expr EQCOMP { yyerrorex(syntaxerror, "比较运算符 == 缺少表达式"); $$.ty = gBoolean; }
+      | expr NEQ { yyerrorex(syntaxerror, "比较运算符 != 缺少表达式"); $$.ty = gBoolean; }
+      | expr AND { canconvert($1.ty, gBoolean, 0); yyerrorex(syntaxerror, "逻辑运算符 and 缺少表达式"); $$.ty = gBoolean; }
+      | expr OR { canconvert($1.ty, gBoolean, 0); yyerrorex(syntaxerror, "逻辑运算符 or 缺少表达式"); $$.ty = gBoolean; }
+      | NOT { yyerrorex(syntaxerror, "逻辑运算符 not 缺少表达式"); $$.ty = gBoolean; }
 ;
 
 funccall: rid LPAREN exprlistcompl RPAREN {
         $$ = checkfunccall($1.str, $3.pl);    
     }
     |  rid LPAREN exprlistcompl newline {
-        yyerrorex(syntaxerror, "Missing ')'");
+        yyerrorex(syntaxerror, "缺少 ')'");
         $$ = checkfunccall($1.str, $3.pl);
     }
 ;
@@ -280,11 +280,11 @@ nativefuncdecl: NATIVE rid TAKES optparam_list RETURNS opttype
 {
     if (ht_lookup(&locals, $2.str) || ht_lookup(&params, $2.str) || ht_lookup(&globals, $2.str)) {
         char buf[1024];
-        snprintf(buf, 1024, "%s already defined as variable", $2.str);
+        snprintf(buf, 1024, "%s 已经被定义为变量", $2.str);
         yyerrorex(semanticerror, buf);
     } else if (ht_lookup(&types, $2.str)) {
         char buf[1024];
-        snprintf(buf, 1024, "%s already defined as type", $2.str);
+        snprintf(buf, 1024, "%s 已经被定义为类型", $2.str);
         yyerrorex(semanticerror, buf);
     }
     $$.fd = newfuncdecl(); 
@@ -306,20 +306,20 @@ nativefuncdecl: NATIVE rid TAKES optparam_list RETURNS opttype
 
 funcdefn: newline
        | funcdefncore
-       | statement { yyerrorex(syntaxerror, "Statement outside of function"); }
+       | statement { yyerrorex(syntaxerror, "语句必须写在函数内"); }
 ;
 
 funcdefncore: funcbegin localblock codeblock funcend {
             if(retval != gNothing) {
                 if(!getTypeTag($3.ty))
-                    yyerrorline(semanticerror, lineno - 1, "Missing return");
+                    yyerrorline(semanticerror, lineno - 1, "缺少 return");
                 else if ( flagenabled(flag_rb) )
                     canconvertreturn($3.ty, retval, -1);
             }
             fnannotations = 0;
         }
        | funcbegin localblock codeblock {
-            yyerrorex(syntaxerror, "Missing endfunction");
+            yyerrorex(syntaxerror, "缺少 endfunction");
             ht_clear(&params);
             ht_clear(&locals);
             ht_clear(&initialized);
@@ -340,7 +340,7 @@ funcend: ENDFUNCTION {
 ;
 
 returnorreturns: RETURNS
-               | RETURN {yyerrorex(syntaxerror,"Expected \"returns\" instead of \"return\"");}
+               | RETURN {yyerrorex(syntaxerror,"应该用 \"returns\" 而不是 \"return\"");}
 ;
 
 funcbegin: FUNCTION rid TAKES optparam_list returnorreturns opttype {
@@ -375,14 +375,14 @@ statement:  newline { $$.ty = gEmpty; }
        }
        | SET rid EQUALS expr newline { if (getVariable($2.str)->isarray) {
                                          char ebuf[1024];
-                                         snprintf(ebuf, 1024, "Index missing for array variable %s", $2.str);
+                                         snprintf(ebuf, 1024, "数组变量 %s 缺少索引 ", $2.str);
                                          yyerrorline(semanticerror, lineno - 1,  ebuf);
                                        }
                                        canconvert($4.ty, getVariable($2.str)->ty, -1);
                                        $$.ty = gAny;
                                        if (getVariable($2.str)->isconst) {
                                          char ebuf[1024];
-                                         snprintf(ebuf, 1024, "Cannot assign to constant %s", $2.str);
+                                         snprintf(ebuf, 1024, "无法给常量 %s 赋值", $2.str);
                                          yyerrorline(semanticerror, lineno - 1, ebuf);
                                        }
                                        if (inconstant)
@@ -398,7 +398,7 @@ statement:  newline { $$.ty = gEmpty; }
              canconvert($4.ty, gInteger, -1);
              if (!tan->isarray) {
                char ebuf[1024];
-               snprintf(ebuf, 1024, "%s is not an array", $2.str);
+               snprintf(ebuf, 1024, "%s 不是数组", $2.str);
                yyerrorline(semanticerror, lineno - 1, ebuf);
              }
              canconvert($7.ty, tan->ty, -1);
@@ -408,17 +408,17 @@ statement:  newline { $$.ty = gEmpty; }
            }
        | loopstart newline codeblock loopend newline {$$.ty = $3.ty;}
        | loopstart newline codeblock {$$.ty = $3.ty; yyerrorex(syntaxerror, "Missing endloop");}
-       | EXITWHEN expr newline { canconvert($2.ty, gBoolean, -1); if (!inloop) yyerrorline(syntaxerror, lineno - 1, "Exitwhen outside of loop"); $$.ty = gAny;}
+       | EXITWHEN expr newline { canconvert($2.ty, gBoolean, -1); if (!inloop) yyerrorline(syntaxerror, lineno - 1, "Exitwhen 不能在 loop 外使用"); $$.ty = gAny;}
        | RETURN expr newline {
             $$.ty = mkretty($2.ty, 1);
             if(retval == gNothing)
-                yyerrorline(semanticerror, lineno - 1, "Cannot return value from function that returns nothing");
+                yyerrorline(semanticerror, lineno - 1, "Return 不能有返回值，因为函数没有定义返回值");
             else if (! flagenabled(flag_rb) )
                 canconvertreturn($2.ty, retval, 0);
          }
        | RETURN newline {
             if (retval != gNothing)
-                yyerrorline(semanticerror, lineno - 1, "Return nothing in function that should return value");
+                yyerrorline(semanticerror, lineno - 1, "Return 不能没有返回值，因为函数定义了返回值");
                 $$.ty = mkretty(gAny, 1);
             }
        | DEBUG statement {$$.ty = gAny;}
@@ -426,17 +426,17 @@ statement:  newline { $$.ty = gEmpty; }
        | IF expr THEN newline codeblock elsifseq elseseq {
             canconvert($2.ty, gBoolean, -1);
             $$.ty = combinetype($5.ty, combinetype($6.ty, $7.ty));
-            yyerrorex(syntaxerror, "Missing endif");
+            yyerrorex(syntaxerror, "缺少 endif");
         }
        | IF expr newline {
             canconvert($2.ty, gBoolean, -1);
             $$.ty = gAny;
-            yyerrorex(syntaxerror, "Missing then or non valid expression");
+            yyerrorex(syntaxerror, "缺少 then 或 合法的表达式");
         }
-       | SET funccall newline{ $$.ty = gAny; yyerrorline(semanticerror, lineno - 1, "Call expected instead of set");}
+       | SET funccall newline{ $$.ty = gAny; yyerrorline(semanticerror, lineno - 1, "应该用 call 而不是 set 来调用函数");}
        | lvardecl {
             $$.ty = gAny;
-            yyerrorex(semanticerror, "Local declaration after first statement");
+            yyerrorex(semanticerror, "局部变量定义必须在其他语句之前");
         }
        | error {$$.ty = gAny; }
 ;
@@ -492,7 +492,7 @@ vartypedecl: type rid {
     }
     | CONSTANT type rid {
         if (infunction) {
-            yyerrorex(semanticerror, "Local constants are not allowed");
+            yyerrorex(semanticerror, "局部变量不能是常量");
         }
         struct typeandname *tan = newtypeandname($2.ty, $3.str);
         tan->isconst = 1;
@@ -507,22 +507,22 @@ vartypedecl: type rid {
 
     // using "type" as variable name 
     | type TYPE {
-        yyerrorex(syntaxerror, "Invalid variable name \"type\"");
+        yyerrorex(syntaxerror, "非法的变量名 \"type\"");
         struct typeandname *tan = newtypeandname($1.ty, "type");
         $$ = checkvardecl(tan);
     }
 
     | CONSTANT type TYPE {
         if (infunction) {
-            yyerrorex(semanticerror, "Local constants are not allowed");
+            yyerrorex(semanticerror, "局部变量不能是常量");
         }
-        yyerrorex(syntaxerror, "Invalid variable name \"type\"");
+        yyerrorex(syntaxerror, "非法的变量名 \"type\"");
         struct typeandname *tan = newtypeandname($2.ty, "type");
         tan->isconst = 1;
         $$ = checkvardecl(tan);
     }
     | type ARRAY TYPE {
-        yyerrorex(syntaxerror, "Invalid variable name \"type\"");
+        yyerrorex(syntaxerror, "非法的变量名 \"type\"");
         struct typeandname *tan = newtypeandname($1.ty, "type");
         tan->isarray = 1;
         $$ = checkarraydecl(tan);
@@ -539,23 +539,23 @@ endlocalsmarker: /* empty */ { fCurrent = NULL; }
 ;
 
 lvardecl: LOCAL vardecl { }
-        | CONSTANT LOCAL vardecl { yyerrorex(syntaxerror, "Local variables can not be declared constant"); }
-        | typedef { yyerrorex(syntaxerror,"Types can not be extended inside functions"); }
+        | CONSTANT LOCAL vardecl { yyerrorex(syntaxerror, "局部变量不能是常量"); }
+        | typedef { yyerrorex(syntaxerror,"类型不能被定义在函数里"); }
 ;
 
 vardecl: vartypedecl newline {
              const struct typeandname *tan = getVariable($1.str);
              if (tan->isconst) {
-               yyerrorline(syntaxerror, lineno - 1, "Constants must be initialized");
+               yyerrorline(syntaxerror, lineno - 1, "常量必须初始化");
              }
              if(infunction && flagenabled(flag_shadowing) ){
                  if( ht_lookup(&globals, tan->name)){
                      char buf[1024];
-                     snprintf(buf, 1024, "Local variable %s shadows global variable", tan->name);
+                     snprintf(buf, 1024, "局部变量 %s 和全局变量重名", tan->name);
                      yyerrorline(semanticerror, lineno -1, buf);
                  } else if( ht_lookup(&params, tan->name)){
                      char buf[1024];
-                     snprintf(buf, 1024, "Local variable %s shadows parameter", tan->name);
+                     snprintf(buf, 1024, "局部变量 %s 和函数参数重名", tan->name);
                      yyerrorline(semanticerror, lineno -1, buf);
                  }
              }
@@ -564,7 +564,7 @@ vardecl: vartypedecl newline {
         |  vartypedecl EQUALS expr newline {
              const struct typeandname *tan = getVariable($1.str);
              if (tan->isarray) {
-               yyerrorex(syntaxerror, "Arrays cannot be directly initialized");
+               yyerrorex(syntaxerror, "数组不能直接初始化");
              }
              if(infunction && !ht_lookup(&initialized, tan->name)){
                put(&initialized, tan->name, (void*)1);
@@ -572,11 +572,11 @@ vardecl: vartypedecl newline {
              if(infunction && flagenabled(flag_shadowing) ){
                  if( ht_lookup(&globals, tan->name)){
                      char buf[1024];
-                     snprintf(buf, 1024, "Local variable %s shadows global variable", tan->name);
+                     snprintf(buf, 1024, "局部变量 %s 和全局变量重名", tan->name);
                      yyerrorex(semanticerror, buf);
                  } else if( ht_lookup(&params, tan->name)){
                      char buf[1024];
-                     snprintf(buf, 1024, "Local variable %s shadows parameter", tan->name);
+                     snprintf(buf, 1024, "局部变量 %s 和函数参数重名", tan->name);
                      yyerrorex(semanticerror, buf);
                  }
              }
@@ -589,11 +589,11 @@ vardecl: vartypedecl newline {
 typedef: TYPE rid EXTENDS type {
   if (ht_lookup(&types, $2.str)) {
      char buf[1024];
-     snprintf(buf, 1024, "Multiply defined type %s", $2.str);
+     snprintf(buf, 1024, "类型 %s 重复定义", $2.str);
      yyerrorex(semanticerror, buf);
   } else if (ht_lookup(&functions, $2.str)) {
     char buf[1024];
-    snprintf(buf, 1024, "%s already defined as function", $2.str);
+    snprintf(buf, 1024, "%s 已经被定义为函数", $2.str);
     yyerrorex(semanticerror, buf);
   }
   else
@@ -608,7 +608,7 @@ type: primtype { $$.ty = $1.ty; }
   | rid {
    if (ht_lookup(&types, $1.str) == NULL) {
      char buf[1024];
-     snprintf(buf, 1024, "Undefined type %s", $1.str);
+     snprintf(buf, 1024, "类型 %s 未定义", $1.str);
      getsuggestions($1.str, buf, 1024, 1, &types);
      yyerrorex(semanticerror, buf);
      $$.ty = gAny;

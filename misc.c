@@ -82,7 +82,7 @@ void yyerror (const char *s)  /* Called by yyparse on error */
 void put(struct hashtable *h, const char *name, void *val){
     if( !ht_put(h, name, val) ){
         char ebuf[1024];
-        snprintf(ebuf, 1024, "Symbol %s multiply defined", name);
+        snprintf(ebuf, 1024, "标识符 %s 重复定义", name);
         yyerrorline(semanticerror, islinebreak ? lineno - 1 : lineno, ebuf);
     }
 }
@@ -217,13 +217,13 @@ void getsuggestions(const char *name, char *buff, size_t buffsize, int nTables, 
 
     char hbuff[1024];
     if(count == 1){
-        snprintf(hbuff, 1024, ". Maybe you meant %s", suggestions[0].name);
+        snprintf(hbuff, 1024, ". 或许你想要的是 %s", suggestions[0].name);
         strncat(buff, hbuff, buffsize);
     }else if(count == 2){
-        snprintf(hbuff, 1024, ". Maybe you meant %s or %s", suggestions[0].name, suggestions[1].name);
+        snprintf(hbuff, 1024, ". 或许你想要的是 %s 或 %s", suggestions[0].name, suggestions[1].name);
         strncat(buff, hbuff, buffsize);
     }else if(count >= 3){
-        snprintf(hbuff, 1024, ". Maybe you meant %s, %s or %s", suggestions[0].name, suggestions[1].name, suggestions[2].name);
+        snprintf(hbuff, 1024, ". 或许你想要的是 %s, %s 或 %s", suggestions[0].name, suggestions[1].name, suggestions[2].name);
         strncat(buff, hbuff, buffsize);
     }
 }
@@ -243,7 +243,7 @@ const struct typeandname *getVariable(const char *varname)
     result = ht_lookup(&globals, varname);
     if (result) return result;
 
-    snprintf(ebuf, 1024, "Undeclared variable %s", varname);
+    snprintf(ebuf, 1024, "变量 %s 没有定义", varname);
     getsuggestions(varname, ebuf, 1024, 3, &locals, &params, &globals);
     yyerrorline(semanticerror, islinebreak ? lineno - 1 : lineno, ebuf);
 
@@ -262,7 +262,7 @@ void validateGlobalAssignment(const char *varname)
     struct typeandname *result;
     result = ht_lookup(&globals, varname);
     if (result) {
-        snprintf(ebuf, 1024, "Assignment to global variable %s in constant function", varname);
+        snprintf(ebuf, 1024, "在常量函数中，无法修改全局变量 %s ", varname);
         yyerrorline(semanticerror, lineno - 1, ebuf);
     }
 }
@@ -278,14 +278,14 @@ void checkParameters(const struct funcdecl *fd, const struct paramlist *inp, boo
             return;
         if (fi == NULL && pi != NULL) {
             char buf[1024];
-            snprintf(buf, 1024, "Too many arguments passed to function %s. ", fd->name);
+            snprintf(buf, 1024, "函数 %s 的参数太多. ", fd->name);
             yyerrorex(semanticerror, buf);
             return;
         }
         if (fi != NULL && pi == NULL) {
             char buf[1024];
-            snprintf(buf, 1024, "Not enough arguments passed to function %s. ", fd->name);
-            strncat(buf, "Still missing: ", 1024);
+            snprintf(buf, 1024, "函数 %s 的参数太少. ", fd->name);
+            strncat(buf, "还缺少: ", 1024);
             bool addComma = false;
             for(; fi; fi = fi->next){
                 if(addComma){
@@ -300,12 +300,12 @@ void checkParameters(const struct funcdecl *fd, const struct paramlist *inp, boo
         char buf[1024];
         if(! canconvertbuf(buf, 1024, pi->ty, fi->ty )){
             char pbuf[1024];
-            snprintf(pbuf, 1024, " in parameter %s in call to %s", fi->name, fd->name);
+            snprintf(pbuf, 1024, "，在调用函数 %s 时的参数 %s", fd->name, fi->name);
             strncat(buf, pbuf, 1024);
             yyerrorex(semanticerror, buf);
         }
         if(flagenabled(flag_filter) && mustretbool && typeeq(pi->ty, gCodeReturnsNoBoolean)){
-            yyerrorex(semanticerror, "Function passed to Filter or Condition must return a boolean");
+            yyerrorex(semanticerror, "传递给 Filter 或 Condition 的函数的返回值必须是 boolean");
             return;
         }
         pi = pi->next;
@@ -323,7 +323,7 @@ const struct typenode *binop(const struct typenode *a, const struct typenode *b)
     if (typeeq(b, gAny))
         return a;
     if ((!typeeq(a, gInteger) && !typeeq(a, gReal)) || (!typeeq(b, gInteger) && !typeeq(b, gReal))) {
-        yyerrorline(semanticerror, islinebreak ? lineno - 1 : lineno, "Bad types for binary operator");
+        yyerrorline(semanticerror, islinebreak ? lineno - 1 : lineno, "运算符两边的类型错误");
     }
     return gReal;
 }
@@ -378,7 +378,7 @@ bool canconvertbuf(char *buf, size_t buflen, const struct typenode *ufrom, const
     if (typeeq(from, to) && (typeeq(from, gBoolean) || typeeq(from, gString) || typeeq(from, gReal) || typeeq(from, gInteger) || typeeq(from, gCode)))
         return true;
 
-    snprintf(buf, buflen, "Cannot convert %s to %s", ufrom->typename, uto->typename);
+    snprintf(buf, buflen, "无法将类型从 %s 转换为 %s", ufrom->typename, uto->typename);
     return false;
 }
 
@@ -416,7 +416,7 @@ void canconvertreturn(const struct typenode *ufrom, const struct typenode *uto, 
     to = getPrimitiveAncestor(to);
     if ((typeeq(to, gReal)) && (typeeq(from, gInteger))) {
         // can't return integer when it expects a real (added 9.5.2005)
-        snprintf(ebuf, 1024, "Cannot convert returned value from %s to %s", getTypePtr(from)->typename, getTypePtr(to)->typename);
+        snprintf(ebuf, 1024, "无法将返回值的类型从 %s 转换为 %s", getTypePtr(from)->typename, getTypePtr(to)->typename);
         yyerrorline(semanticerror, lineno + linemod, ebuf);
         return;
     }
@@ -428,7 +428,7 @@ void canconvertreturn(const struct typenode *ufrom, const struct typenode *uto, 
         return;
     }
 
-    snprintf(ebuf, 1024, "Cannot convert returned value from %s to %s", getTypePtr(ufrom)->typename, getTypePtr(uto)->typename);
+    snprintf(ebuf, 1024, "无法将返回值的类型从 %s 转换为 %s", getTypePtr(ufrom)->typename, getTypePtr(uto)->typename);
     yyerrorline(semanticerror, lineno + linemod, ebuf);
     return;
 }
@@ -437,7 +437,7 @@ void isnumeric(const struct typenode *ty)
 {
     ty = getPrimitiveAncestor(ty);
     if (!(ty == gInteger || ty == gReal || ty == gAny))
-        yyerrorline(semanticerror, islinebreak ? lineno - 1 : lineno, "Cannot be converted to numeric type");
+        yyerrorline(semanticerror, islinebreak ? lineno - 1 : lineno, "无法转换为数字");
 }
 
 void checkcomparisonsimple(const struct typenode *a)
@@ -445,11 +445,11 @@ void checkcomparisonsimple(const struct typenode *a)
     const struct typenode *pa;
     pa = getPrimitiveAncestor(a);
     if (typeeq(pa, gString) || typeeq(pa, gHandle) || typeeq(pa, gCode) || typeeq(pa, gBoolean)) {
-        yyerrorex(semanticerror, "Comparing the order/size of 2 variables only works on reals and integers");
+        yyerrorex(semanticerror, "只能比较整数或者实数");
         return;
     }
     if (typeeq(pa, gNull))
-        yyerrorex(semanticerror, "Comparing null is not allowed");
+        yyerrorex(semanticerror, "无法比较空值");
 }
 
 void checkcomparison(const struct typenode *a, const struct typenode *b)
@@ -458,11 +458,11 @@ void checkcomparison(const struct typenode *a, const struct typenode *b)
     pa = getPrimitiveAncestor(a);
     pb = getPrimitiveAncestor(b);
     if (typeeq(pa, gString) || typeeq(pa, gHandle) || typeeq(pa, gCode) || typeeq(pa, gBoolean) || typeeq(pb, gString) || typeeq(pb, gCode) || typeeq(pb, gHandle) || typeeq(pb, gBoolean)) {
-        yyerrorex(semanticerror, "Comparing the order/size of 2 variables only works on reals and integers");
+        yyerrorex(semanticerror, "只能比较整数或者实数");
         return;
     }
     if (typeeq(pa, gNull) && typeeq(pb, gNull))
-        yyerrorex(semanticerror, "Comparing null is not allowed");
+        yyerrorex(semanticerror, "无法比较空值");
 }
 
 void checkeqtest(const struct typenode *a, const struct typenode *b)
@@ -475,7 +475,7 @@ void checkeqtest(const struct typenode *a, const struct typenode *b)
     if (typeeq(pa, gNull) || typeeq(pb, gNull))
         return;
     if (!typeeq(pa, pb)) {
-        yyerrorex(semanticerror, "Comparing two variables of different primitive types (except real and integer) is not allowed");
+        yyerrorex(semanticerror, "无法比较两个类型不同的变量(除了整数和实数)");
         return;
     }
 }
@@ -521,11 +521,11 @@ union node checkfunctionheader(const char *fnname, struct paramlist *pl, const s
 
     if (ht_lookup(&locals, fnname) || ht_lookup(&params, fnname) || ht_lookup(&globals, fnname)) {
         char buf[1024];
-        snprintf(buf, 1024, "%s already defined as variable", fnname);
+        snprintf(buf, 1024, "标识符 %s 已经被定义为变量", fnname);
         yyerrorex(semanticerror, buf);
     } else if (ht_lookup(&types, fnname)) {
         char buf[1024];
-        snprintf(buf, 1024, "%s already defined as type", fnname);
+        snprintf(buf, 1024, "标识符 %s 已经被定义为类型", fnname);
         yyerrorex(semanticerror, buf);
     }
 
@@ -547,18 +547,18 @@ union node checkfunctionheader(const char *fnname, struct paramlist *pl, const s
         put(&params, strdup(tan->name), newtypeandname(tan->ty, tan->name));
         if (ht_lookup(&functions, tan->name)) {
             char buf[1024];
-            snprintf(buf, 1024, "%s already defined as function", tan->name);
+            snprintf(buf, 1024, "标识符 %s 已经被定义为函数", tan->name);
             yyerrorex(semanticerror, buf);
         } else if (ht_lookup(&types, tan->name)) {
             char buf[1024];
-            snprintf(buf, 1024, "%s already defined as type", tan->name);
+            snprintf(buf, 1024, "标识符 %s 已经被定义为类型", tan->name);
             yyerrorex(semanticerror, buf);
         }
 
         if( flagenabled(flag_shadowing) ){
             if( ht_lookup(&globals, tan->name) ){
                 char buf[1024];
-                snprintf(buf, 1024, "Parmeter %s shadows global variable", tan->name);
+                snprintf(buf, 1024, "参数 %s 和全局变量重名", tan->name);
                 yyerrorex(semanticerror, buf);
             }
         }
@@ -577,18 +577,18 @@ union node checkfunccall(const char *fnname, struct paramlist *pl)
     struct funcdecl *fd = ht_lookup(&functions, fnname);
     if (fd == NULL) {
         char ebuf[1024];
-        snprintf(ebuf, 1024, "Undeclared function %s", fnname);
+        snprintf(ebuf, 1024, "函数 %s 没有定义", fnname);
         getsuggestions(fnname, ebuf, 1024, 1, &functions);
         yyerrorex(semanticerror, ebuf);
         ret.ty = gAny;
     } else {
         if (inconstant && !(fd->isconst)) {
             char ebuf[1024];
-            snprintf(ebuf, 1024, "Call to non-constant function %s in constant function", fnname);
+            snprintf(ebuf, 1024, "在常量函数中，无法调用非常量函数 %s ", fnname);
             yyerrorex(semanticerror, ebuf);
         }
         if (fd == fCurrent && fCurrent)
-            yyerrorex(semanticerror, "Recursive function calls are not permitted in local declarations");
+            yyerrorex(semanticerror, "不能在局部变量定义时，在递归调用函数");
         checkParameters(fd, pl, fd == fFilter || fd == fCondition);
         ret.ty = fd->ret;
     }
@@ -600,11 +600,11 @@ static void checkvarname(struct typeandname *tan, bool isarray)
     const char *name = tan->name;
     if (ht_lookup(&functions, name)) {
         char buf[1024];
-        snprintf(buf, 1024, "Symbol %s already defined as function", name);
+        snprintf(buf, 1024, "标识符 %s 已经被定义为函数", name);
         yyerrorex(semanticerror, buf);
     } else if (ht_lookup(&types, name)) {
         char buf[1024];
-        snprintf(buf, 1024, "Symbol %s already defined as type", name);
+        snprintf(buf, 1024, "标识符 %s 已经被定义为类型", name);
         yyerrorex(semanticerror, buf);
     }
 
@@ -614,13 +614,13 @@ static void checkvarname(struct typeandname *tan, bool isarray)
         char buf[1024];
         existing = ht_lookup(&params, name);
         if ( isarray && infunction && existing) {
-            snprintf(buf, 1024, "Symbol %s already defined as function parameter", name);
+            snprintf(buf, 1024, "标识符 %s 已经被定义为函数参数", name);
             yyerrorex(semanticerror, buf);
         }
         if (!existing) {
             existing = ht_lookup(&globals, name);
             if ( isarray && infunction && existing) {
-                snprintf(buf, 1024, "Symbol %s already defined as global variable", name);
+                snprintf(buf, 1024, "标识符 %s 已经被定义为全局变量", name);
                 yyerrorex(semanticerror, buf);
             }
         }
@@ -652,7 +652,7 @@ union node checkarraydecl(struct typeandname *tan)
     union node ret;
 
     if (getPrimitiveAncestor(tan->ty) == gCode)
-        yyerrorex(semanticerror, "Code arrays are not allowed");
+        yyerrorex(semanticerror, "无法使用code数组");
 
     checkvarname(tan, true);
 

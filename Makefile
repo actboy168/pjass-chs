@@ -1,4 +1,4 @@
-CFLAGS = -O3 -flto -MMD -s
+CFLAGS = -O3 -flto -MMD -s -fexec-charset=GBK
 VERSION := f128812
 
 # when testing and releasing, we can't run both in parallel
@@ -24,7 +24,7 @@ OBJS += main.o token.yy.o grammar.tab.o
 .PHONY: binary-release src-release
 .PHONY: help
 
-all: pjass
+all: pjass-latest
 
 help:
 	@awk -F ':|##' \
@@ -34,7 +34,7 @@ help:
 
 -include $(OBJS:.o=.d)
 
-pjass: $(OBJS) ## Builds pjass
+pjass-latest: $(OBJS) ## Builds pjass
 	$(CC) $(CFLAGS) $^ -o $@
 
 test: should-fail should-check map-scripts ## Runs all tests

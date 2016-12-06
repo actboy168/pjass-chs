@@ -54,7 +54,7 @@ TABS     [\x01-\x09\x0B\x0C\x0E-\x1F]
 
 [']\\[btrnf\\]['] { return UNITTYPEINT; }
 [']\\(.|[\r\n])['] {
-        yyerrorline(syntaxerror, lineno, "Invalid escape character sequence");
+        yyerrorline(syntaxerror, lineno, "不合法的转义字符");
         return UNITTYPEINT; 
     }
 
@@ -65,7 +65,7 @@ TABS     [\x01-\x09\x0B\x0C\x0E-\x1F]
     }
 <RAWCODE>['] {
         if(rawcodelen != 4 && rawcodelen != 1){
-            yyerrorline(syntaxerror, rawcodestartline, "Rawcodes must consist of 1 or 4 characters");
+            yyerrorline(syntaxerror, rawcodestartline, "256进制整数必须是由1个或者4个字符组成");
         }
         BEGIN(INITIAL);
         return UNITTYPEINT;
@@ -73,10 +73,10 @@ TABS     [\x01-\x09\x0B\x0C\x0E-\x1F]
 
 <RAWCODE>\\[btrnf"\\] {
         rawcodelen++;
-        yyerrorline(syntaxerror, rawcodestartline, "Escaped chars are only allowed if they are the only char in the rawcode.");
+        yyerrorline(syntaxerror, rawcodestartline, "4个字符组成的256进制整数不能使用转义字符");
     }
 <RAWCODE>\\(.|[\r\n]) {
-        yyerrorline(syntaxerror, lineno, "Invalid escape character sequence");
+        yyerrorline(syntaxerror, lineno, "不合法的转义字符");
         rawcodelen++;
     }
 
@@ -87,7 +87,7 @@ TABS     [\x01-\x09\x0B\x0C\x0E-\x1F]
 ["] { BEGIN(INSTRING); }
 <INSTRING>["] { BEGIN(INITIAL); return STRINGLIT; }
 <INSTRING>\\[btrnf"\\] { }
-<INSTRING>\\(.|[\r\n]) { yyerrorline(syntaxerror, lineno, "Invalid escape character sequence"); }
+<INSTRING>\\(.|[\r\n]) { yyerrorline(syntaxerror, lineno, "不合法的转义字符"); }
 
 <INSTRING>\r?\n { lineno++; isconstant = 0; }
 <INSTRING>\r { lineno++; isconstant = 0; }
@@ -99,35 +99,35 @@ TABS     [\x01-\x09\x0B\x0C\x0E-\x1F]
 {DIGIT}+"."{DIGIT}+  return REALLIT;
 "."{DIGIT}+  return REALLIT;
 {DIGIT}+"." return REALLIT;
-"0"({OCTDIGIT}*("8"|"9"){OCTDIGIT}*)+ yyerrorline(syntaxerror, lineno, "Invalid digit in octal integer notation"); return INTLIT;
+"0"({OCTDIGIT}*("8"|"9"){OCTDIGIT}*)+ yyerrorline(syntaxerror, lineno, "不合法的整数"); return INTLIT;
 ({DIGIT}+)|(("0x"|"$"){HEXDIGIT}+) return INTLIT;
 
-"if" if (!islinebreak) yyerrorline(syntaxerror, lineno, "Missing linebreak before if"); islinebreak=0; return IF;
+"if" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 if 之前"); islinebreak=0; return IF;
 "not" return NOT;
 "then" return THEN;
-"type" if (!islinebreak) { char ebuf[1024]; sprintf(ebuf, "Missing linebreak before type declaration"); yyerrorline(syntaxerror, lineno, ebuf); } islinebreak=0; return TYPE;
+"type" if (!islinebreak) { char ebuf[1024]; sprintf(ebuf, "缺少换行，在 类型定义 之前"); yyerrorline(syntaxerror, lineno, ebuf); } islinebreak=0; return TYPE;
 "extends" return EXTENDS;
 "handle" islinebreak=0; return HANDLE;
-"globals" if (!islinebreak) { char ebuf[1024]; sprintf(ebuf, "Missing linebreak before globals block"); yyerrorline(syntaxerror, lineno, ebuf); } islinebreak=0; inblock=1; return GLOBALS;
+"globals" if (!islinebreak) { char ebuf[1024]; sprintf(ebuf, "缺少换行，在 globals 之前"); yyerrorline(syntaxerror, lineno, ebuf); } islinebreak=0; inblock=1; return GLOBALS;
 "endglobals" islinebreak=0; inblock=0; return ENDGLOBALS;
 "constant" isconstant = islinebreak; islinebreak=0; return CONSTANT;
-"native" if (!islinebreak && !isconstant) { char ebuf[1024]; sprintf(ebuf, "Missing linebreak before native declaration"); yyerrorline(syntaxerror, lineno, ebuf); } islinebreak=0; return NATIVE;
+"native" if (!islinebreak && !isconstant) { char ebuf[1024]; sprintf(ebuf, "缺少换行，在 native函数定义 之前"); yyerrorline(syntaxerror, lineno, ebuf); } islinebreak=0; return NATIVE;
 "takes" return TAKES;
 "returns" return RETURNS;
-"function" if (!islinebreak && !isconstant && !inblock) { char ebuf[1024]; sprintf(ebuf, "Missing linebreak before function declaration"); yyerrorline(syntaxerror, lineno, ebuf); } islinebreak=0; return FUNCTION;
+"function" if (!islinebreak && !isconstant && !inblock) { char ebuf[1024]; sprintf(ebuf, "缺少换行，在 函数定义 之前"); yyerrorline(syntaxerror, lineno, ebuf); } islinebreak=0; return FUNCTION;
 "endfunction" islinebreak=0; return ENDFUNCTION;
-"local" if (!islinebreak) { char ebuf[1024]; sprintf(ebuf, "Missing linebreak before local declaration"); yyerrorline(syntaxerror, lineno, ebuf); } islinebreak=0; return LOCAL;
+"local" if (!islinebreak) { char ebuf[1024]; sprintf(ebuf, "缺少换行，在 局部变量定义 之前"); yyerrorline(syntaxerror, lineno, ebuf); } islinebreak=0; return LOCAL;
 "array" return ARRAY;
-"set" if (!islinebreak) yyerrorline(syntaxerror, lineno, "Missing linebreak before assignment"); islinebreak=0; return SET;
-"call" if (!islinebreak) yyerrorline(syntaxerror, lineno, "Missing linebreak before function call"); islinebreak=0; return CALL;
-"else" if (!islinebreak) yyerrorline(syntaxerror, lineno, "Missing linebreak before else"); islinebreak=0; return ELSE;
-"elseif" if (!islinebreak) yyerrorline(syntaxerror, lineno, "Missing linebreak before elseif"); islinebreak=0; return ELSEIF;
-"endif" if (!islinebreak) yyerrorline(syntaxerror, lineno, "Missing linebreak before endif"); islinebreak=0; return ENDIF;
-"loop" if (!islinebreak) yyerrorline(syntaxerror, lineno, "Missing linebreak before loop"); islinebreak=0; return LOOP;
-"exitwhen" if (!islinebreak) yyerrorline(syntaxerror, lineno, "Missing linebreak before exitwhen"); islinebreak=0; return EXITWHEN;
-"return" if (!islinebreak) yyerrorline(syntaxerror, lineno, "Missing linebreak before return"); islinebreak=0; return RETURN;
+"set" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 赋值 之前"); islinebreak=0; return SET;
+"call" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 函数调用 之前"); islinebreak=0; return CALL;
+"else" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 else 之前"); islinebreak=0; return ELSE;
+"elseif" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 elseif 之前"); islinebreak=0; return ELSEIF;
+"endif" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 endif 之前"); islinebreak=0; return ENDIF;
+"loop" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 loop 之前"); islinebreak=0; return LOOP;
+"exitwhen" if (!islinebreak) yyerrorline(syntaxerror, lineno, "M缺少换行，在 exitwhen 之前"); islinebreak=0; return EXITWHEN;
+"return" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 return 之前"); islinebreak=0; return RETURN;
 "debug" return DEBUG;
-"endloop" if (!islinebreak) yyerrorline(syntaxerror, lineno, "Missing linebreak before endloop"); islinebreak=0; return ENDLOOP;
+"endloop" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 endloop 之前"); islinebreak=0; return ENDLOOP;
 "null" return TNULL;
 "true" return TTRUE;
 "false" return TFALSE;
@@ -165,7 +165,7 @@ TABS     [\x01-\x09\x0B\x0C\x0E-\x1F]
 \xEF\xBB\xBF    /* utf8 bom */
 [\x01-\x09\x0B\x0C\x0E-\x1F]+    /* eat up tabs */
 
-.            { char ebuf[1024]; sprintf(ebuf, "Unrecognized character %s (ASCII %u)", yytext, (unsigned char)yytext[0] ); yyerrorline(syntaxerror, lineno, ebuf); }
+.            { char ebuf[1024]; sprintf(ebuf, "不合法的字符 %s (ASCII %u)", yytext, (unsigned char)yytext[0] ); yyerrorline(syntaxerror, lineno, ebuf); }
 
 %%
 
