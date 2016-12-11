@@ -313,7 +313,7 @@ funcdefncore: funcbegin localblock codeblock funcend {
             if(retval != gNothing) {
                 if(!getTypeTag($3.ty))
                     yyerrorline(semanticerror, lineno - 1, "缺少 return");
-                else if ( flagenabled(flag_rb) )
+                else if ( !flagenabled(flag_rb) )
                     canconvertreturn($3.ty, retval, -1);
             }
             fnannotations = 0;
