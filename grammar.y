@@ -106,6 +106,14 @@ funcdefns: /* empty */
 ;
 
 globdefs: /* empty */
+         | gd globdefs
+;
+
+gd:      newline
+       | globdef
+;
+
+globdef: /* empty */
          | GLOBALS newline vardecls ENDGLOBALS endglobalsmarker
          | GLOBALS vardecls ENDGLOBALS endglobalsmarker {yyerrorline(syntaxerror, lineno - 1, "缺少换行，在global之后");}
 ;
