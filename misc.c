@@ -414,12 +414,12 @@ void canconvertreturn(const struct typenode *ufrom, const struct typenode *uto, 
 
     from = getPrimitiveAncestor(from);
     to = getPrimitiveAncestor(to);
-    if ((typeeq(to, gReal)) && (typeeq(from, gInteger))) {
-        // can't return integer when it expects a real (added 9.5.2005)
-        snprintf(ebuf, 1024, "无法将返回值的类型从 %s 转换为 %s", getTypePtr(from)->typename, getTypePtr(to)->typename);
-        yyerrorline(semanticerror, lineno + linemod, ebuf);
-        return;
-    }
+    //if ((typeeq(to, gReal)) && (typeeq(from, gInteger))) {
+    //    // can't return integer when it expects a real (added 9.5.2005)
+    //    snprintf(ebuf, 1024, "无法将返回值的类型从 %s 转换为 %s", getTypePtr(from)->typename, getTypePtr(to)->typename);
+    //    yyerrorline(semanticerror, lineno + linemod, ebuf);
+    //    return;
+    //}
 
     if ((typeeq(from, gNull)) && (!typeeq(to, gInteger)) && (!typeeq(to, gReal)) && (!typeeq(to, gBoolean)))
         return; // can't return null when it expects integer, real or boolean (added 9.5.2005)
