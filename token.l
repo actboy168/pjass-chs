@@ -124,7 +124,7 @@ TABS     [\x01-\x09\x0B\x0C\x0E-\x1F]
 "elseif" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 elseif 之前"); islinebreak=0; return ELSEIF;
 "endif" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 endif 之前"); islinebreak=0; return ENDIF;
 "loop" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 loop 之前"); islinebreak=0; return LOOP;
-"exitwhen" if (!islinebreak) yyerrorline(syntaxerror, lineno, "M缺少换行，在 exitwhen 之前"); islinebreak=0; return EXITWHEN;
+"exitwhen" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 exitwhen 之前"); islinebreak=0; return EXITWHEN;
 "return" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 return 之前"); islinebreak=0; return RETURN;
 "debug" return DEBUG;
 "endloop" if (!islinebreak) yyerrorline(syntaxerror, lineno, "缺少换行，在 endloop 之前"); islinebreak=0; return ENDLOOP;

@@ -3,8 +3,19 @@
 
 #include "typeandname.h"
 
-#if !(defined __CYGWIN__ || defined linux)
-    extern void * _aligned_malloc(size_t size, size_t alignment);
+#if defined(__FreeBSD__)
+    void * _aligned_malloc(size_t size, size_t alignment){
+        return aligned_alloc(alignment, size);
+    }
+#elif defined(__linux__) || defined(__CYGWIN__)
+#include <malloc.h>
+    void * _aligned_malloc(size_t size, size_t alignment){
+        return memalign(alignment, size);
+    }
+#elif defined(_WIN32)
+    extern void * _aligned_malloc(size_t, size_t);
+#else
+#error "Please add a definition for some aligned malloc function"
 #endif
 
 struct typeandname *newtypeandname(const struct typenode *ty, const char *name)
@@ -19,11 +30,7 @@ struct typeandname *newtypeandname(const struct typenode *ty, const char *name)
 struct typenode *newtypenode(const char *typename, const struct typenode *superclass)
 {
     struct typenode *result;
-#if (defined __CYGWIN__ || defined linux)
-    result = memalign(8, sizeof(struct typenode));
-#else
     result = _aligned_malloc(8, sizeof(struct typenode));
-#endif
     result->typename = strdup(typename);
     result->superclass = superclass;
     return result;
