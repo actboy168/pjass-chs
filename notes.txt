@@ -11,7 +11,7 @@ Alternatively you can get Cygwin and add the cygwin/bin directory to your PATH v
 Last but not least I've added version information to the executable, for compilation under Windows that is.
 You'll need ResourceHacker which you can obtain here:
 
-http://www.angusj.com/resourcehacker/
+http://www.angusj.com/resourcehacker/ or Resource Cracker (https://www.pelock.com/products/resource-cracker)
 
 Extract it to a directory and update the RESHCK definition in the makefile to match that path.
 If you're not compiling under Windows, remove the following line from the makefile:
